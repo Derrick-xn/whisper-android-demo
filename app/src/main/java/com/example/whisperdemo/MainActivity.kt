@@ -1,12 +1,16 @@
 package com.example.whisperdemo
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.SeekBar
+import android.widget.Switch
+import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -70,6 +74,11 @@ class MainActivity : AppCompatActivity(), AudioRecorder.AudioCallback {
         
         binding.clearButton.setOnClickListener {
             clearResults()
+        }
+        
+        // 添加设置按钮点击事件
+        binding.settingsButton?.setOnClickListener {
+            showSettingsDialog()
         }
     }
     
@@ -169,6 +178,53 @@ class MainActivity : AppCompatActivity(), AudioRecorder.AudioCallback {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
     
+    private fun showSettingsDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("音频处理设置")
+        
+        val view = layoutInflater.inflate(R.layout.dialog_settings, null)
+        
+        // 获取当前设置
+        val sharedPrefs = getSharedPreferences("whisper_settings", Context.MODE_PRIVATE)
+        val enableDenoising = sharedPrefs.getBoolean("enable_denoising", true)
+        val enableVoiceEnhancement = sharedPrefs.getBoolean("enable_voice_enhancement", true)
+        val silenceThreshold = sharedPrefs.getInt("silence_threshold", 500)
+        
+        // 设置控件
+        val denoisingSwitch = view.findViewById<Switch>(R.id.switch_denoising)
+        val enhancementSwitch = view.findViewById<Switch>(R.id.switch_enhancement)
+        val thresholdSeeker = view.findViewById<SeekBar>(R.id.seekbar_threshold)
+        val thresholdText = view.findViewById<TextView>(R.id.text_threshold_value)
+        
+        denoisingSwitch.isChecked = enableDenoising
+        enhancementSwitch.isChecked = enableVoiceEnhancement
+        thresholdSeeker.progress = silenceThreshold / 10
+        thresholdText.text = silenceThreshold.toString()
+        
+        thresholdSeeker.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val value = progress * 10
+                thresholdText.text = value.toString()
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+        
+        builder.setView(view)
+        builder.setPositiveButton("保存") { _, _ ->
+            // 保存设置
+            val editor = sharedPrefs.edit()
+            editor.putBoolean("enable_denoising", denoisingSwitch.isChecked)
+            editor.putBoolean("enable_voice_enhancement", enhancementSwitch.isChecked)
+            editor.putInt("silence_threshold", thresholdSeeker.progress * 10)
+            editor.apply()
+            
+            showToast("设置已保存")
+        }
+        builder.setNegativeButton("取消", null)
+        builder.show()
+    }
+    
     // AudioRecorder.AudioCallback 实现
     override fun onAudioData(data: FloatArray) {
         Log.d(TAG, "Received audio data: ${data.size} samples")
@@ -183,11 +239,15 @@ class MainActivity : AppCompatActivity(), AudioRecorder.AudioCallback {
                 
                 runOnUiThread {
                     if (result.isNotEmpty()) {
+                        // 流式显示 - 先显示当前结果，然后累积
+                        val currentTime = System.currentTimeMillis()
+                        val timestampedResult = "[$currentTime] $result"
+                        
                         val currentText = binding.resultText.text.toString()
                         val newText = if (currentText == getString(R.string.recognition_result)) {
-                            getString(R.string.recognition_result) + "\n\n" + result
+                            getString(R.string.recognition_result) + "\n\n" + timestampedResult
                         } else {
-                            currentText + "\n\n" + result
+                            currentText + "\n\n" + timestampedResult
                         }
                         binding.resultText.text = newText
                         
@@ -195,6 +255,13 @@ class MainActivity : AppCompatActivity(), AudioRecorder.AudioCallback {
                         binding.scrollView.post {
                             binding.scrollView.fullScroll(View.FOCUS_DOWN)
                         }
+                        
+                        // 添加动画效果
+                        binding.resultText.alpha = 0.7f
+                        binding.resultText.animate()
+                            .alpha(1.0f)
+                            .setDuration(300)
+                            .start()
                         
                         Log.i(TAG, "Transcription result: $result")
                     }

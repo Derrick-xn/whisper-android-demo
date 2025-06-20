@@ -59,4 +59,101 @@ void highPassFilter(std::vector<float>& audio, float cutoff_freq, int sample_rat
         prev_output = output;
         audio[i] = output;
     }
+}
+
+void spectralSubtractionDenoise(std::vector<float>& audio, int sample_rate) {
+    if (audio.empty()) return;
+    
+    float rms = 0.0f;
+    for (float sample : audio) {
+        rms += sample * sample;
+    }
+    rms = std::sqrt(rms / audio.size());
+    
+    float noise_threshold = rms * 0.1f;
+    
+    for (float& sample : audio) {
+        if (std::abs(sample) < noise_threshold) {
+            sample *= 0.1f;
+        }
+    }
+    
+    LOGI("Applied spectral subtraction denoising, RMS: %f, threshold: %f", rms, noise_threshold);
+}
+
+void normalizeAudio(std::vector<float>& audio) {
+    if (audio.empty()) return;
+    
+    float max_val = 0.0f;
+    for (float sample : audio) {
+        max_val = std::max(max_val, std::abs(sample));
+    }
+    
+    if (max_val > 0.0f) {
+        float scale = 0.8f / max_val;
+        for (float& sample : audio) {
+            sample *= scale;
+        }
+        LOGI("Normalized audio, max value was: %f, scale: %f", max_val, scale);
+    }
+}
+
+void voiceEnhancementFilter(std::vector<float>& audio, int sample_rate) {
+    if (audio.empty()) return;
+    
+    highPassFilter(audio, 300.0f, sample_rate);
+    
+    for (float& sample : audio) {
+        sample *= 1.2f;
+        sample = std::max(-0.95f, std::min(0.95f, sample));
+    }
+    
+    LOGI("Applied voice enhancement filter");
+}
+
+bool detectVoiceActivity(const std::vector<float>& audio, int sample_rate) {
+    if (audio.empty()) return false;
+    
+    float energy = 0.0f;
+    for (float sample : audio) {
+        energy += sample * sample;
+    }
+    energy /= audio.size();
+    
+    int zero_crossings = 0;
+    for (size_t i = 1; i < audio.size(); ++i) {
+        if ((audio[i-1] >= 0) != (audio[i] >= 0)) {
+            zero_crossings++;
+        }
+    }
+    float zcr = static_cast<float>(zero_crossings) / audio.size();
+    
+    const float energy_threshold = 0.001f;
+    const float zcr_min = 0.01f;
+    const float zcr_max = 0.3f;
+    
+    bool is_voice = (energy > energy_threshold) && (zcr > zcr_min) && (zcr < zcr_max);
+    
+    LOGI("VAD: energy=%f, zcr=%f, is_voice=%s", energy, zcr, is_voice ? "true" : "false");
+    
+    return is_voice;
+}
+
+void adaptiveNoiseGate(std::vector<float>& audio, float threshold_ratio) {
+    if (audio.empty()) return;
+    
+    float max_val = 0.0f;
+    for (float sample : audio) {
+        max_val = std::max(max_val, std::abs(sample));
+    }
+    
+    float gate_threshold = max_val * threshold_ratio;
+    
+    for (float& sample : audio) {
+        if (std::abs(sample) < gate_threshold) {
+            sample *= 0.01f;
+        }
+    }
+    
+    LOGI("Applied adaptive noise gate, threshold: %f", gate_threshold);
 } 

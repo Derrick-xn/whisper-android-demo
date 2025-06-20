@@ -60,6 +60,26 @@ Java_com_example_whisperdemo_WhisperService_transcribe(JNIEnv *env, jobject thiz
     
     std::vector<float> pcmf32(data, data + length);
     
+    // 应用音频预处理
+    LOGI("Applying audio preprocessing...");
+    
+    // 1. 音量归一化
+    normalizeAudio(pcmf32);
+    
+    // 2. 高通滤波去除低频噪音
+    highPassFilter(pcmf32, 80.0f, sample_rate);
+    
+    // 3. 频谱减法降噪
+    spectralSubtractionDenoise(pcmf32, sample_rate);
+    
+    // 4. 语音增强
+    voiceEnhancementFilter(pcmf32, sample_rate);
+    
+    // 5. 自适应噪音门
+    adaptiveNoiseGate(pcmf32, 0.05f);
+    
+    LOGI("Audio preprocessing completed, processed %zu samples", pcmf32.size());
+    
     // Create whisper parameters
     struct whisper_full_params wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
     wparams.print_realtime   = false;
@@ -101,4 +121,20 @@ Java_com_example_whisperdemo_WhisperService_releaseModel(JNIEnv *env, jobject th
         g_whisper_context = nullptr;
         LOGI("Model released");
     }
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_example_whisperdemo_AudioRecorder_detectVoiceActivityNative(JNIEnv *env, jobject thiz, jfloatArray audio_data, jint sample_rate) {
+    // Get audio data from Java array
+    jsize length = env->GetArrayLength(audio_data);
+    jfloat* data = env->GetFloatArrayElements(audio_data, nullptr);
+    
+    std::vector<float> audioVector(data, data + length);
+    
+    // 调用我们的VAD算法
+    bool isVoice = detectVoiceActivity(audioVector, sample_rate);
+    
+    env->ReleaseFloatArrayElements(audio_data, data, JNI_ABORT);
+    
+    return isVoice ? JNI_TRUE : JNI_FALSE;
 } 

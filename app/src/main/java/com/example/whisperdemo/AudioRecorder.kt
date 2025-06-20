@@ -168,15 +168,26 @@ class AudioRecorder(private val context: Context) {
      * 处理音频数据块
      */
     private suspend fun processAudioChunk(buffer: ShortArray, length: Int) {
-        // 检测音量
+        // 转换为float数组用于更精确的分析
+        val floatBuffer = FloatArray(length)
+        for (i in 0 until length) {
+            floatBuffer[i] = buffer[i] / 32768.0f
+        }
+        
+        // 使用改进的VAD算法
+        val isVoiceDetected = detectVoiceActivityNative(floatBuffer, SAMPLE_RATE)
+        
+        // 检测音量（作为备用）
         var sum = 0L
         for (i in 0 until length) {
             sum += abs(buffer[i].toInt())
         }
         val averageAmplitude = sum / length
         
-        // 语音活动检测
-        if (averageAmplitude > SILENCE_THRESHOLD) {
+        // 组合判断：使用VAD结果和音量阈值
+        val hasVoice = isVoiceDetected || (averageAmplitude > SILENCE_THRESHOLD)
+        
+        if (hasVoice) {
             // 检测到语音
             silenceCounter = 0
             if (!hasDetectedVoice) {
@@ -196,7 +207,7 @@ class AudioRecorder(private val context: Context) {
             silenceCounter++
             
             // 如果已经检测到语音且静音时间足够长，处理音频
-            if (hasDetectedVoice && silenceCounter > 50) { // 约0.5秒的静音
+            if (hasDetectedVoice && silenceCounter > 30) { // 减少到0.3秒的静音
                 withContext(Dispatchers.Main) {
                     callback?.onSilenceDetected()
                 }
@@ -257,5 +268,18 @@ class AudioRecorder(private val context: Context) {
      */
     fun release() {
         stopRecording()
+    }
+    
+    // 添加native方法声明
+    private external fun detectVoiceActivityNative(audioData: FloatArray, sampleRate: Int): Boolean
+    
+    companion object {
+        init {
+            try {
+                System.loadLibrary("whisperdemo")
+            } catch (e: UnsatisfiedLinkError) {
+                Log.e(TAG, "Failed to load native library for VAD", e)
+            }
+        }
     }
 } 
