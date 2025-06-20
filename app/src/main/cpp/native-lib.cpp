@@ -67,7 +67,7 @@ Java_com_example_whisperdemo_WhisperService_transcribe(JNIEnv *env, jobject thiz
     wparams.print_timestamps = false;
     wparams.print_special    = false;
     wparams.translate        = false;
-    wparams.language         = nullptr;  // Auto-detect language
+    wparams.language         = "zh";  // Chinese language
     wparams.n_threads        = 4;
     wparams.offset_ms        = 0;
     wparams.no_context       = true;
