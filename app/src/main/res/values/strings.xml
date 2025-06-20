@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Whisper语音识别Demo</string>
+    <string name="start_recording">开始录音</string>
+    <string name="stop_recording">停止录音</string>
+    <string name="recognizing">识别中...</string>
+    <string name="recognition_result">识别结果：</string>
+    <string name="permission_denied">需要录音权限才能使用语音识别功能</string>
+    <string name="model_loading">模型加载中...</string>
+    <string name="model_loaded">模型加载完成</string>
+    <string name="model_load_failed">模型加载失败</string>
+    <string name="clear_text">清空文本</string>
+    <string name="loading_model">正在加载Whisper模型...</string>
+</resources> 

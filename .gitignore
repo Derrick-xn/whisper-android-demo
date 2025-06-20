@@ -1,0 +1,99 @@
+# Android Studio 生成的文件
+.gradle/
+build/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Android 构建输出
+app/build/
+**/build/
+
+# NDK
+obj/
+.externalNativeBuild/
+.cxx/
+
+# 本地配置文件
+local.properties
+
+# 日志文件
+*.log
+
+# macOS 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 其他临时文件
+*.tmp
+*.temp
+*~
+
+# Android Studio Navigation editor temp files
+.navigation/
+
+# Android Studio captures folder
+captures/
+
+# IntelliJ
+*.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/jarRepositories.xml
+.idea/caches
+.idea/modules.xml
+.idea/.name
+.idea/compiler.xml
+.idea/copyright/profiles_settings.xml
+.idea/encodings.xml
+.idea/misc.xml
+.idea/profile_settings.xml
+.idea/runConfigurations.xml
+.idea/scopes/scope_settings.xml
+.idea/vcs.xml
+
+# Gradle
+.gradle
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Signing files
+.signing/
+
+# External native build folder generated in Android Studio 2.2 and later
+.externalNativeBuild
+
+# Google Services (e.g. APIs or Firebase)
+google-services.json
+
+# Freeline
+freeline.py
+freeline/
+freeline_project_description.json
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/readme.md
+
+# Version control
+.svn/
+
+# Android Profiling
+*.hprof
+
+# Model files (upload manually to GitHub)
+*.bin 
