@@ -7,6 +7,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Log
+import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import kotlin.math.abs
@@ -24,6 +25,14 @@ class AudioRecorder(private val context: Context) {
         private const val SILENCE_THRESHOLD = 500
         private const val MIN_AUDIO_LENGTH_MS = 1000 // 最小音频长度1秒
         private const val MAX_AUDIO_LENGTH_MS = 30000 // 最大音频长度30秒
+        
+        init {
+            try {
+                System.loadLibrary("whisperdemo")
+            } catch (e: UnsatisfiedLinkError) {
+                Log.e(TAG, "Failed to load native library for VAD", e)
+            }
+        }
     }
     
     private var audioRecord: AudioRecord? = null
@@ -61,6 +70,7 @@ class AudioRecorder(private val context: Context) {
     /**
      * 开始录音
      */
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     fun startRecording(): Boolean {
         if (isRecording) {
             Log.w(TAG, "Already recording")
@@ -272,14 +282,4 @@ class AudioRecorder(private val context: Context) {
     
     // 添加native方法声明
     private external fun detectVoiceActivityNative(audioData: FloatArray, sampleRate: Int): Boolean
-    
-    companion object {
-        init {
-            try {
-                System.loadLibrary("whisperdemo")
-            } catch (e: UnsatisfiedLinkError) {
-                Log.e(TAG, "Failed to load native library for VAD", e)
-            }
-        }
-    }
 } 

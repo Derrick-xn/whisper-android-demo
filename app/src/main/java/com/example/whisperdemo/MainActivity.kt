@@ -10,6 +10,9 @@ import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
+import android.annotation.SuppressLint
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -75,11 +78,6 @@ class MainActivity : AppCompatActivity(), AudioRecorder.AudioCallback {
         binding.clearButton.setOnClickListener {
             clearResults()
         }
-        
-        // 添加设置按钮点击事件
-        binding.settingsButton?.setOnClickListener {
-            showSettingsDialog()
-        }
     }
     
     private fun loadModel() {
@@ -137,6 +135,7 @@ class MainActivity : AppCompatActivity(), AudioRecorder.AudioCallback {
         }
     }
     
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     private fun startRecordingInternal() {
         if (audioRecorder.startRecording()) {
             isRecording = true
